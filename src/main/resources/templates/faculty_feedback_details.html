@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Feedback Details</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .back-btn { background: gray; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; }
+        
+        .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #f9f9f9; }
+        .ratings { font-weight: bold; color: #555; }
+        .comment { margin-top: 10px; font-style: italic; color: #333; }
+        .timestamp { font-size: 0.8em; color: #888; margin-top: 5px; }
+        
+        .high-rating { color: green; }
+        .low-rating { color: red; }
+    </style>
+</head>
+<body>
+
+    <a href="/admin/dashboard" class="back-btn">← Back to Dashboard</a>
+    
+    <h1>Feedback Report: <span th:text="${faculty.name}"></span></h1>
+    <h3>Subject: <span th:text="${faculty.subject}"></span></h3>
+    <hr>
+
+    <h3 th:if="${feedbackList.empty}" style="color:red">No feedback submitted yet.</h3>
+
+    <div th:each="feed : ${feedbackList}" class="card">
+        <div class="ratings">
+            Teaching: <span th:text="${feed.teachingRating}" th:class="${feed.teachingRating >= 4} ? 'high-rating' : 'low-rating'"></span>/5 | 
+            Punctuality: <span th:text="${feed.punctualityRating}" th:class="${feed.punctualityRating >= 4} ? 'high-rating' : 'low-rating'"></span>/5 | 
+            Behavior: <span th:text="${feed.behaviorRating}" th:class="${feed.behaviorRating >= 4} ? 'high-rating' : 'low-rating'"></span>/5
+        </div>
+        
+        <div class="comment">
+            " <span th:text="${feed.comments}"></span> "
+        </div>
+
+        <div class="timestamp">
+            Submitted on: <span th:text="${feed.submissionTime}"></span>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School Admin Portal</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; display: flex; justify-content: center; gap: 50px; }
+        .box { border: 1px solid #ccc; padding: 20px; width: 300px; border-radius: 5px; }
+        input { display: block; width: 90%; margin: 10px 0; padding: 8px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+        h2 { margin-top: 0; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>School Login</h2>
+        <p class="error" th:if="${error}" th:text="${error}"></p>
+        <form action="/admin/login" method="post">
+            <label>School Name:</label>
+            <input type="text" name="name" required>
+            <label>Password:</label>
+            <input type="password" name="password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div class="box" style="background-color: #f9f9f9;">
+        <h2>Register New School</h2>
+        <form action="/admin/register" method="post">
+            <label>School Name:</label>
+            <input type="text" name="name" required placeholder="e.g. Stanford University">
+            
+            <label>Admin Password:</label>
+            <input type="password" name="password" required>
+
+            <label>Email Restriction?</label>
+            <select name="isRestricted" style="width: 100%; margin-bottom: 10px; padding: 5px;">
+                <option value="false">No (Open Mode)</option>
+                <option value="true">Yes (Restricted Mode)</option>
+            </select>
+
+            <label>Allowed Domain (if restricted):</label>
+            <input type="text" name="emailDomain" placeholder="e.g. stanford.edu">
+            
+            <button type="submit" style="background: green;">Register School</button>
+        </form>
+    </div>
+
+</body>
+</html>

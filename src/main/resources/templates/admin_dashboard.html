@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .add-form { background: #eef; padding: 15px; margin-top: 20px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Dashboard: <span th:text="${school.name}"></span></h1>
+        <a href="/admin/logout" style="color: red;">Logout</a>
+    </div>
+
+    <p><b>Status:</b> 
+        <span th:if="${school.emailRestricted}" style="color:red">Restricted Mode (@<span th:text="${school.emailDomain}"></span>)</span>
+        <span th:unless="${school.emailRestricted}" style="color:green">Open Mode (Public)</span>
+    </p>
+
+    <hr>
+
+    <h3>Your Faculty Members</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Subject</th>
+                <th>Action</th> </tr>
+        </thead>
+        <tbody>
+            <tr th:each="fac : ${facultyList}">
+                <td th:text="${fac.id}">1</td>
+                <td th:text="${fac.name}">Dr. Smith</td>
+                <td th:text="${fac.subject}">Physics</td>
+                <td>
+                    <a th:href="@{/admin/view-feedback(facultyId=${fac.id})}" 
+                       style="background: #007bff; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px;">
+                       View Feedback
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="add-form">
+        <h3>Add New Faculty</h3>
+        <form action="/admin/add-faculty" method="post">
+            <input type="text" name="name" placeholder="Faculty Name" required style="padding: 5px; width: 200px;">
+            <input type="text" name="subject" placeholder="Subject" required style="padding: 5px; width: 200px;">
+            <button type="submit" style="padding: 5px 15px; background: blue; color: white; border: none;">Add Faculty</button>
+        </form>
+    </div>
+
+    <br>
+    <a href="/">Go to Student View</a>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Select School</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .school-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        a { text-decoration: none; color: white; background: #007bff; padding: 10px 15px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Faculty Feedback Portal</h1>
+    <h3>Select your School/College to continue:</h3>
+
+    <div th:each="school : ${schools}" class="school-card">
+        <h2 th:text="${school.name}">School Name</h2>
+        <p th:if="${school.emailRestricted}" style="color:red;">
+            * Restricted Mode (Requires @<span th:text="${school.emailDomain}"></span> email)
+        </p>
+        <p th:unless="${school.emailRestricted}" style="color:green;">
+            * Open Mode (No Login Required)
+        </p>
+        <br>
+        <a th:href="@{/feedback-form(schoolId=${school.id})}">Proceed to Feedback</a>
+    </div>
+</body>
+</html>

@@ -1,44 +1,143 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Feedback Details</title>
+    <title>Feedback Summary</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .back-btn { background: gray; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f8f9fa; max-width: 1000px; margin: auto; }
         
-        .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #f9f9f9; }
-        .ratings { font-weight: bold; color: #555; }
-        .comment { margin-top: 10px; font-style: italic; color: #333; }
-        .timestamp { font-size: 0.8em; color: #888; margin-top: 5px; }
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-btn { background: #6c757d; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: background 0.3s; }
+        .back-btn:hover { background: #5a6268; }
+
+        /* Summary Card (Averages) */
+        .summary-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-top: 5px solid #007bff; margin-bottom: 30px; }
         
-        .high-rating { color: green; }
-        .low-rating { color: red; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-top: 20px; text-align: center; }
+        
+        .stat-box { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #333; }
+        .stat-name { font-size: 0.9em; color: #777; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Color coding for scores */
+        .score-good { color: #28a745; }
+        .score-avg { color: #ffc107; }
+        .score-bad { color: #dc3545; }
+
+        /* Comments Section */
+        .comments-section { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .comment-group { margin-bottom: 40px; }
+        
+        .group-header { font-size: 1.2em; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .header-strength { color: #28a745; border-color: #28a745; }
+        .header-improve { color: #dc3545; border-color: #dc3545; }
+        .header-suggest { color: #d39e00; border-color: #ffc107; } /* Darker yellow for text */
+        .header-other { color: #6c757d; border-color: #6c757d; }
+
+        .comment-item { 
+            padding: 10px; 
+            border-bottom: 1px dashed #eee; 
+            font-style: italic; 
+            color: #444; 
+            position: relative; 
+            padding-left: 20px;
+        }
+        .comment-item::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #ccc;
+            font-weight: bold;
+        }
+        .comment-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
-    <a href="/admin/dashboard" class="back-btn">← Back to Dashboard</a>
-    
-    <h1>Feedback Report: <span th:text="${faculty.name}"></span></h1>
-    <h3>Subject: <span th:text="${faculty.subject}"></span></h3>
-    <hr>
-
-    <h3 th:if="${feedbackList.empty}" style="color:red">No feedback submitted yet.</h3>
-
-    <div th:each="feed : ${feedbackList}" class="card">
-        <div class="ratings">
-            Teaching: <span th:text="${feed.teachingRating}" th:class="${feed.teachingRating >= 4} ? 'high-rating' : 'low-rating'"></span>/5 | 
-            Punctuality: <span th:text="${feed.punctualityRating}" th:class="${feed.punctualityRating >= 4} ? 'high-rating' : 'low-rating'"></span>/5 | 
-            Behavior: <span th:text="${feed.behaviorRating}" th:class="${feed.behaviorRating >= 4} ? 'high-rating' : 'low-rating'"></span>/5
+    <div class="header">
+        <div>
+            <h1 style="margin:0; color:#333;">Feedback Report: <span th:text="${faculty.name}"></span></h1>
+            <p style="color:#666; margin:5px 0;">
+                Course: <span th:text="${faculty.course.courseName} + ' ' + ${faculty.course.semester}"></span> 
+                | Subject: <span th:text="${faculty.subject}"></span>
+                | Total Responses: <span style="font-weight:bold; color:black;" th:text="${totalVotes}">0</span>
+            </p>
         </div>
+        <a href="/institute/dashboard" class="back-btn">Back to Dashboard</a>
+    </div>
+
+    <div class="summary-card" th:if="${totalVotes > 0}">
+        <h3>📊 Performance Overview (Average Ratings / 5)</h3>
         
-        <div class="comment">
-            " <span th:text="${feed.comments}"></span> "
+        <div class="grid-container">
+            <div class="stat-box">
+                <div class="stat-value" th:classappend="${summary.avgTeaching >= 4} ? 'score-good' : (${summary.avgTeaching >= 3} ? 'score-avg' : 'score-bad')"
+                     th:text="${#numbers.formatDecimal(summary.avgTeaching, 1, 1)}">0.0</div>
+                <div class="stat-name">Teaching Quality</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-value" th:classappend="${summary.catSubjectKnowledge >= 4} ? 'score-good' : (${summary.catSubjectKnowledge >= 3} ? 'score-avg' : 'score-bad')"
+                     th:text="${#numbers.formatDecimal(summary.catSubjectKnowledge, 1, 1)}">0.0</div>
+                <div class="stat-name">Subject Depth</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-value" th:classappend="${summary.catCommunication >= 4} ? 'score-good' : (${summary.catCommunication >= 3} ? 'score-avg' : 'score-bad')"
+                     th:text="${#numbers.formatDecimal(summary.catCommunication, 1, 1)}">0.0</div>
+                <div class="stat-name">Communication</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-value" th:classappend="${summary.catManagement >= 4} ? 'score-good' : (${summary.catManagement >= 3} ? 'score-avg' : 'score-bad')"
+                     th:text="${#numbers.formatDecimal(summary.catManagement, 1, 1)}">0.0</div>
+                <div class="stat-name">Class Mgmt</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="stat-value" th:classappend="${summary.avgBehavior >= 4} ? 'score-good' : (${summary.avgBehavior >= 3} ? 'score-avg' : 'score-bad')"
+                     th:text="${#numbers.formatDecimal(summary.avgBehavior, 1, 1)}">0.0</div>
+                <div class="stat-name">Behavior</div>
+            </div>
+        </div>
+    </div>
+
+    <h3 th:if="${totalVotes == 0}" style="color:red; text-align:center; margin-top:50px; background:white; padding:40px; border-radius:8px;">
+        No feedback data available for this faculty member yet.
+    </h3>
+
+    <div class="comments-section" th:if="${totalVotes > 0}">
+        <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:25px;">📝 Student Comments</h3>
+        
+        <div class="comment-group">
+            <div class="group-header header-strength">What Students Liked (Strengths)</div>
+            <div th:each="feed : ${rawFeedback}">
+                <div class="comment-item" th:if="${feed.textStrengths != null and !feed.textStrengths.isEmpty()}" th:text="${feed.textStrengths}"></div>
+            </div>
+            <div th:if="${#lists.isEmpty(rawFeedback.![textStrengths])}" style="color:#999; font-style:italic; padding-left:20px;">No comments in this section.</div>
         </div>
 
-        <div class="timestamp">
-            Submitted on: <span th:text="${feed.submissionTime}"></span>
+        <div class="comment-group">
+            <div class="group-header header-improve">Areas for Improvement</div>
+            <div th:each="feed : ${rawFeedback}">
+                <div class="comment-item" th:if="${feed.textImprovements != null and !feed.textImprovements.isEmpty()}" th:text="${feed.textImprovements}"></div>
+            </div>
         </div>
+
+        <div class="comment-group">
+            <div class="group-header header-suggest">Suggestions & Advice</div>
+            <div th:each="feed : ${rawFeedback}">
+                <div class="comment-item" th:if="${feed.textSuggestions != null and !feed.textSuggestions.isEmpty()}" th:text="${feed.textSuggestions}"></div>
+            </div>
+        </div>
+
+        <div class="comment-group">
+            <div class="group-header header-other">Additional Comments</div>
+            <div th:each="feed : ${rawFeedback}">
+                <div class="comment-item" th:if="${feed.textAdditionalComments != null and !feed.textAdditionalComments.isEmpty()}" th:text="${feed.textAdditionalComments}"></div>
+            </div>
+        </div>
+
     </div>
 
 </body>

@@ -7,13 +7,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FeedbackService {
 
     @Autowired
     private SchoolRepository schoolRepo;
+    
+    @Autowired
+    private CourseRepository courseRepo;
     
     @Autowired
     private FacultyRepository facultyRepo;
@@ -24,110 +26,172 @@ public class FeedbackService {
     @Autowired
     private FeedbackDataRepository feedbackRepo;
 
-    // --- Helper Methods for Dropdowns ---
+    // --- Helper Methods ---
 
     public List<School> getAllSchools() {
         return schoolRepo.findAll();
-    }
-
-    public List<Faculty> getFacultyBySchool(Long schoolId) {
-        return facultyRepo.findBySchoolId(schoolId);
     }
     
     public School getSchoolById(Long id) {
         return schoolRepo.findById(id).orElse(null);
     }
-    
- // --- ADMIN MODULE: School Registration & Login ---
 
-    public School registerSchool(String name, String emailDomain, String password, boolean isRestricted) {
+    public List<Course> getCoursesBySchool(Long schoolId) {
+        return courseRepo.findBySchoolId(schoolId);
+    }
+    
+    public Course getCourseById(Long courseId) {
+        return courseRepo.findById(courseId).orElse(null);
+    }
+
+    public List<Faculty> getFacultyByCourse(Long courseId) {
+        return facultyRepo.findByCourseId(courseId);
+    }
+    
+    public List<FeedbackData> getFeedbackByFaculty(Long facultyId) {
+        return feedbackRepo.findByFacultyId(facultyId);
+    }
+    
+    // ADMIN: Get all faculty for a school (Complex query via Java stream)
+    public List<Faculty> getAllFacultyForSchool(Long schoolId) {
+        List<Course> courses = courseRepo.findBySchoolId(schoolId);
+        List<Faculty> allFaculty = new java.util.ArrayList<>();
+        for (Course c : courses) {
+            allFaculty.addAll(facultyRepo.findByCourseId(c.getId()));
+        }
+        return allFaculty;
+    }
+
+    // --- SUBMIT FEEDBACK LOGIC ---
+    
+    @Transactional
+    public String submitFeedback(Long schoolId, Long courseId, Long facultyId, String studentEmail, 
+                                 FeedbackData feedbackData) {
+        
+        // 1. Get School & Security Checks
+        School school = schoolRepo.findById(schoolId).orElse(null);
+        if (school == null) return "Error: School not found";
+
+        if (school.isEmailRestricted()) {
+            if (studentEmail == null || studentEmail.trim().isEmpty()) {
+                return "Error: Email required.";
+            }
+            if (school.getEmailDomain() != null && !studentEmail.endsWith(school.getEmailDomain())) {
+                return "Error: Invalid Email Domain. Use @" + school.getEmailDomain();
+            }
+            boolean alreadyVoted = voteRepo.existsByStudentEmailAndFacultyId(studentEmail, facultyId);
+            if (alreadyVoted) {
+                return "Error: You have already voted for this faculty.";
+            }
+
+            // Record Vote
+            VoteTracking tracking = new VoteTracking();
+            tracking.setStudentEmail(studentEmail);
+            tracking.setSchool(school);
+            tracking.setFaculty(facultyRepo.findById(facultyId).get());
+            voteRepo.save(tracking);
+        }
+
+        // 2. Save Feedback
+        feedbackData.setFaculty(facultyRepo.findById(facultyId).get());
+        feedbackData.setCourse(courseRepo.findById(courseId).get());
+        
+        feedbackRepo.save(feedbackData);
+
+        return "Success";
+    }
+    
+    // --- INSTITUTE (ADMIN) MODULE ---
+
+    // UPDATED: Now accepts 'username'
+    public School registerSchool(String name, String username, String emailDomain, String password, boolean isRestricted) {
+        // 1. Check if username is taken
+        if (schoolRepo.existsByUsername(username)) {
+            return null; // Username already exists
+        }
+        
         School school = new School();
         school.setName(name);
+        school.setUsername(username); // Set the unique login ID
         school.setEmailDomain(emailDomain);
         school.setAdminPassword(password);
         school.setEmailRestricted(isRestricted);
         return schoolRepo.save(school);
     }
 
-    public School loginSchool(String name, String password) {
-        // Find school by name (In a real app, use email/unique ID)
-        // Note: For simplicity, we assume school names are unique here
-        List<School> schools = schoolRepo.findAll();
-        for (School s : schools) {
-            if (s.getName().equalsIgnoreCase(name) && s.getAdminPassword().equals(password)) {
-                return s;
-            }
+    // UPDATED: Login by 'username' instead of 'name'
+    public School loginSchool(String username, String password) {
+        School s = schoolRepo.findByUsername(username);
+        if (s != null && s.getAdminPassword().equals(password)) {
+            return s;
         }
         return null; // Login failed
     }
+    
+    // Admin adds Course first
+    public void addCourse(Long schoolId, String name, String sem) {
+        School s = schoolRepo.findById(schoolId).orElse(null);
+        if(s != null) {
+            Course c = new Course();
+            c.setSchool(s);
+            c.setCourseName(name);
+            c.setSemester(sem);
+            courseRepo.save(c);
+        }
+    }
 
-    // --- ADMIN MODULE: Add Faculty ---
-
-    public void addFaculty(Long schoolId, String facultyName, String subject) {
-        School school = schoolRepo.findById(schoolId).orElse(null);
-        if (school != null) {
-            Faculty faculty = new Faculty();
-            faculty.setName(facultyName);
-            faculty.setSubject(subject);
-            faculty.setSchool(school);
-            facultyRepo.save(faculty);
+    // Admin adds Faculty to a Course
+    public void addFaculty(Long courseId, String name, String subject, String photoUrl) {
+        Course c = courseRepo.findById(courseId).orElse(null);
+        if (c != null) {
+            Faculty f = new Faculty();
+            f.setName(name);
+            f.setSubject(subject);
+            f.setPhotoUrl(photoUrl);
+            f.setCourse(c);
+            facultyRepo.save(f);
         }
     }
     
- // Retrieve data
-    public List<FeedbackData> getFeedbackByFaculty(Long facultyId) {
-        return feedbackRepo.findByFacultyId(facultyId);
-    }
-
-    // --- THE CORE LOGIC: submitting feedback ---
-    
-    @Transactional // Ensures both saves happen, or neither happens (Rollback safety)
-    public String submitFeedback(Long schoolId, Long facultyId, String studentEmail, 
-                                 int teaching, int punctuality, int behavior, String comments) {
+    //returns average rating for school faculty
+    public Double getSchoolAverageRating(Long schoolId) {
+        List<Faculty> facultyList = getAllFacultyForSchool(schoolId);
         
-        // 1. Get the School Configuration
-        Optional<School> schoolOpt = schoolRepo.findById(schoolId);
-        if (schoolOpt.isEmpty()) return "Error: School not found";
-        School school = schoolOpt.get();
+        if (facultyList.isEmpty()) return 0.0;
 
-        // 2. Security Check: Is this school restricted?
-        if (school.isEmailRestricted()) {
-            
-            // Check A: Is the email empty?
-            if (studentEmail == null || studentEmail.trim().isEmpty()) {
-                return "Error: This school requires a valid email.";
+        double totalScore = 0;
+        int totalVotes = 0;
+
+        for (Faculty f : facultyList) {
+            List<FeedbackData> feedbacks = feedbackRepo.findByFacultyId(f.getId());
+            for (FeedbackData feed : feedbacks) {
+                // We use Teaching Rating as the primary indicator, 
+                // or you can average all 45 fields if you prefer heavy calculation.
+                // For performance, let's use the main "Teaching" score.
+                totalScore += feed.getRatingTeaching(); 
+                totalVotes++;
             }
-
-            // Check B: Does email match the domain? (e.g., must end in @mit.edu)
-            if (school.getEmailDomain() != null && !studentEmail.endsWith(school.getEmailDomain())) {
-                return "Error: Invalid Email Domain. You must use an @" + school.getEmailDomain() + " email.";
-            }
-
-            // Check C: Has this email already voted for THIS faculty?
-            boolean alreadyVoted = voteRepo.existsByStudentEmailAndFacultyId(studentEmail, facultyId);
-            if (alreadyVoted) {
-                return "Error: You have already submitted feedback for this faculty member.";
-            }
-
-            // If we pass all checks, Record the Vote in the Tracking Table
-            VoteTracking tracking = new VoteTracking();
-            tracking.setStudentEmail(studentEmail);
-            tracking.setSchool(school);
-            tracking.setFaculty(facultyRepo.getById(facultyId)); // Get faculty reference
-            voteRepo.save(tracking);
         }
 
-        // 3. Save the Anonymous Feedback (The "Ballot")
-        // Note: We do NOT save the studentEmail here.
-        FeedbackData feedback = new FeedbackData();
-        feedback.setFaculty(facultyRepo.getById(facultyId));
-        feedback.setTeachingRating(teaching);
-        feedback.setPunctualityRating(punctuality);
-        feedback.setBehaviorRating(behavior);
-        feedback.setComments(comments);
+        if (totalVotes == 0) return 0.0;
         
-        feedbackRepo.save(feedback);
+        // Print statement as per your requirements
+        System.out.println("Calc Avg for School ID " + schoolId + " - Roll No:C25012 Name: Shreyash Bhosale");
+        
+        return totalScore / totalVotes;
+    }
+    
+    //returns average faculty rating
+    public Double getFacultyAverageRating(Long facultyId) {
+        List<FeedbackData> feedbackList = feedbackRepo.findByFacultyId(facultyId);
+        if (feedbackList.isEmpty()) return 0.0;
 
-        return "Success";
+        double totalScore = 0;
+        for (FeedbackData f : feedbackList) {
+            // We use 'Teaching Quality' as the primary score. 
+            // You can also average multiple fields here if you want a more complex score.
+            totalScore += f.getRatingTeaching(); 
+        }
+        return totalScore / feedbackList.size();
     }
 }

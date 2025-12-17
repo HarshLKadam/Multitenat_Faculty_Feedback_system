@@ -1,54 +1,247 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Give Feedback</title>
+    <title>Faculty Feedback Form</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-        .error { color: red; background: #ffe6e6; padding: 10px; border: 1px solid red; }
-        label { display: block; margin-top: 15px; font-weight: bold; }
-        input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; }
-        button { margin-top: 20px; padding: 10px 20px; background: green; color: white; border: none; cursor: pointer; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; padding: 20px; max-width: 900px; margin: auto; }
+        
+        .header { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        h2 { color: #007bff; margin: 0; }
+        h4 { color: #555; margin-top: 5px; }
+
+        .error-box { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        
+        form { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+        /* Section Styling */
+        fieldset { border: 1px solid #e0e0e0; margin-bottom: 25px; padding: 20px; border-radius: 5px; background: #fff; }
+        legend { font-weight: bold; color: #007bff; padding: 0 10px; font-size: 1.1em; }
+        
+        /* Question Row */
+        .question-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px dashed #eee; }
+        .question-row:last-child { border-bottom: none; }
+        .q-label { flex: 1; font-weight: 500; color: #333; padding-right: 20px; }
+        
+        /* RATING BOX STYLE */
+        .rating-container { display: flex; gap: 5px; }
+        .rating-box input[type="radio"] { display: none; }
+        
+        .rating-box label {
+            display: inline-block;
+            width: 40px;
+            height: 35px;
+            line-height: 35px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+            background: #f9f9f9;
+            transition: all 0.2s;
+        }
+
+        .rating-box label:hover { background: #e2e6ea; border-color: #adb5bd; }
+        
+        .rating-box.selected label {
+            background-color: #28a745; 
+            color: white;
+            border-color: #28a745;
+        }
+
+        /* DISABLED STATE (Grayed Out) */
+        .form-locked {
+            opacity: 0.4;
+            pointer-events: none; /* Prevents clicking */
+            filter: grayscale(100%);
+            transition: opacity 0.5s ease;
+        }
+
+        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px; font-family: inherit; }
+        
+        .btn-submit { width: 100%; padding: 15px; background: #007bff; color: white; border: none; font-size: 1.1em; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 20px; transition: background 0.3s; }
+        .btn-submit:hover { background: #0056b3; }
+        /* Disable button if form is locked */
+        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+
+        .verification-box { background: #fff3cd; padding: 15px; border-left: 5px solid #ffc107; margin-bottom: 20px; border-radius: 4px; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.8em; color: #888; }
     </style>
 </head>
 <body>
 
-    <h2 th:text="'Feedback for: ' + ${school.name}">School Name</h2>
-    <a href="/">Back to Home</a>
-    <hr>
+    <div class="header">
+        <h2 th:text="${school.name}">Institute Name</h2>
+        <h4 th:text="${course.courseName} + ' - ' + ${course.semester}">Course Name</h4>
+        <a href="/" style="text-decoration: none; font-size: 0.9em; color: #666;">← Cancel & Go Home</a>
+    </div>
 
-    <div th:if="${error}" class="error">
+    <div th:if="${error}" class="error-box">
         <p th:text="${error}"></p>
     </div>
 
     <form action="/submit-feedback" method="post">
+        
         <input type="hidden" name="schoolId" th:value="${school.id}">
+        <input type="hidden" name="courseId" th:value="${course.id}">
 
-        <div th:if="${school.emailRestricted}" style="background: #f9f9f9; padding: 15px; border-left: 5px solid orange;">
-            <p><b>Authentication Required:</b> This college requires a valid student email to verify you haven't voted twice.</p>
-            <label>Your Student Email (@<span th:text="${school.emailDomain}"></span>):</label>
-            <input type="email" name="studentEmail" required placeholder="e.g. john@mit.edu">
+        <div th:if="${school.emailRestricted}" class="verification-box">
+            <p style="margin-top:0;"><b>🔒 Identity Verification Required</b></p>
+            <label>Student Email (@<span th:text="${school.emailDomain}"></span>):</label>
+            <input type="email" name="studentEmail" required placeholder="e.g. rollno@college.edu" style="width:100%; padding:8px; margin-top:5px;">
         </div>
 
-        <label>Select Faculty:</label>
-        <select name="facultyId" required>
-            <option value="">-- Select Teacher --</option>
-            <option th:each="fac : ${facultyList}" th:value="${fac.id}" th:text="${fac.name} + ' (' + ${fac.subject} + ')'"></option>
-        </select>
+        <div style="margin-bottom: 30px; border: 2px solid #007bff; padding: 15px; border-radius: 5px; background: #eef7ff;">
+            <label style="font-size: 1.1em; font-weight: bold; color:#0056b3;">Step 1: Select Faculty Member</label>
+            <br>
+            <small style="color:#666;">You must select a teacher to unlock the feedback form.</small>
+            
+            <select id="facultySelect" name="facultyId" required onchange="unlockForm()" 
+                    style="width: 100%; padding: 10px; font-size: 1em; border: 1px solid #007bff; border-radius: 5px; margin-top: 10px;">
+                <option value="">-- Choose Teacher --</option>
+                <option th:each="fac : ${facultyList}" th:value="${fac.id}" th:text="${fac.name} + ' (' + ${fac.subject} + ')'"></option>
+            </select>
+        </div>
 
-        <label>Teaching Quality (1-5):</label>
-        <input type="number" name="teaching" min="1" max="5" required>
+        <div id="feedbackQuestions" class="form-locked">
+            
+            <p style="text-align:center; color:#666; font-style:italic; margin-bottom: 20px;">
+                Rate on a scale of 1 (Poor) to 5 (Excellent)
+            </p>
 
-        <label>Punctuality (1-5):</label>
-        <input type="number" name="punctuality" min="1" max="5" required>
+            <fieldset>
+                <legend>1. Subject Knowledge</legend>
+                <div th:replace="~{::ratingRow('Teaching Quality', 'ratingTeaching')}"></div>
+                <div th:replace="~{::ratingRow('Depth of Subject Knowledge', 'ratingSubjectDepth')}"></div>
+                <div th:replace="~{::ratingRow('Coverage of Learning Objectives', 'ratingLearningObjCoverage')}"></div>
+                <div th:replace="~{::ratingRow('Revision Effectiveness', 'ratingRevisionEffectiveness')}"></div>
+                <div th:replace="~{::ratingRow('Encouragement of Conceptual Thinking', 'ratingConceptualThinking')}"></div>
+            </fieldset>
 
-        <label>Behavior (1-5):</label>
-        <input type="number" name="behavior" min="1" max="5" required>
+            <fieldset>
+                <legend>2. Communication Skills</legend>
+                <div th:replace="~{::ratingRow('Communication Skills', 'ratingCommunicationSkills')}"></div>
+                <div th:replace="~{::ratingRow('Voice Clarity', 'ratingVoiceClarity')}"></div>
+                <div th:replace="~{::ratingRow('Student Interaction Level', 'ratingInteractionLevel')}"></div>
+                <div th:replace="~{::ratingRow('Question Handling Ability', 'ratingQuestionHandling')}"></div>
+                <div th:replace="~{::ratingRow('Language Proficiency', 'ratingLanguageProficiency')}"></div>
+                <div th:replace="~{::ratingRow('Classroom Engagement', 'ratingEngagementLevel')}"></div>
+            </fieldset>
 
-        <label>Comments:</label>
-        <textarea name="comments" rows="4" required placeholder="Write your honest feedback here..."></textarea>
+            <fieldset>
+                <legend>3. Teaching Methodology</legend>
+                <div th:replace="~{::ratingRow('Teaching Methodology', 'ratingMethodology')}"></div>
+                <div th:replace="~{::ratingRow('Problem-Solving Approach', 'ratingProblemSolving')}"></div>
+                <div th:replace="~{::ratingRow('Use of Blackboard', 'ratingBlackboardUsage')}"></div>
+                <div th:replace="~{::ratingRow('Use of PPT / Slides', 'ratingPptUsage')}"></div>
+                <div th:replace="~{::ratingRow('Lecture Preparedness', 'ratingLecturePreparedness')}"></div>
+            </fieldset>
 
-        <button type="submit">Submit Anonymously</button>
+            <fieldset>
+                <legend>4. Classroom Management</legend>
+                <div th:replace="~{::ratingRow('Punctuality', 'ratingPunctuality')}"></div>
+                <div th:replace="~{::ratingRow('Time Management', 'ratingTimeManagement')}"></div>
+                <div th:replace="~{::ratingRow('Discipline Maintenance', 'ratingDiscipline')}"></div>
+                <div th:replace="~{::ratingRow('Classroom Control', 'ratingControl')}"></div>
+            </fieldset>
+
+            <fieldset>
+                <legend>5. Behavior & Attitude</legend>
+                <div th:replace="~{::ratingRow('Politeness', 'ratingPoliteness')}"></div>
+                <div th:replace="~{::ratingRow('Respect Towards Students', 'ratingRespect')}"></div>
+                <div th:replace="~{::ratingRow('Approachability', 'ratingApproachability')}"></div>
+                <div th:replace="~{::ratingRow('Patience', 'ratingPatience')}"></div>
+                <div th:replace="~{::ratingRow('Non-Discriminatory Behavior', 'ratingNonDiscriminatory')}"></div>
+            </fieldset>
+
+            <fieldset>
+                <legend>6. Assessment & Evaluation</legend>
+                <div th:replace="~{::ratingRow('Fairness in Assessment', 'ratingAssessmentFairness')}"></div>
+                <div th:replace="~{::ratingRow('Transparency in Marking', 'ratingMarkingTransparency')}"></div>
+                <div th:replace="~{::ratingRow('Timely Evaluation', 'ratingTimelyEvaluation')}"></div>
+            </fieldset>
+
+            <fieldset>
+                <legend>7. Student Support</legend>
+                <div th:replace="~{::ratingRow('Availability Outside Class', 'ratingAvailabilityOutside')}"></div>
+                <div th:replace="~{::ratingRow('Doubt-Clearing Effectiveness', 'ratingDoubtClearing')}"></div>
+                <div th:replace="~{::ratingRow('Mentorship Quality', 'ratingMentorshipQuality')}"></div>
+            </fieldset>
+
+            <fieldset>
+                <legend>8. Course Content</legend>
+                <div th:replace="~{::ratingRow('Syllabus Completion', 'ratingSyllabusCompletion')}"></div>
+                <div th:replace="~{::ratingRow('Industry Relevance', 'ratingIndustryRelevance')}"></div>
+                <div th:replace="~{::ratingRow('Exam Orientation', 'ratingExamOrientation')}"></div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Descriptive Feedback (Mandatory)</legend>
+                
+                <label>Strengths:</label>
+                <textarea name="textStrengths" rows="3" required placeholder="Required..."></textarea>
+                
+                <label>Areas for Improvement:</label>
+                <textarea name="textImprovements" rows="3" required placeholder="Required..."></textarea>
+                
+                <label>Suggestions:</label>
+                <textarea name="textSuggestions" rows="3" required placeholder="Required..."></textarea>
+                
+                <label>Additional Comments:</label>
+                <textarea name="textAdditionalComments" rows="3" required placeholder="Required..."></textarea>
+            </fieldset>
+
+            <button type="submit" id="submitBtn" class="btn-submit" disabled>Submit Anonymous Feedback</button>
+        </div>
+
     </form>
+
+    <div class="footer">
+        Roll No: C25012 Name: Shreyash Bhosale
+    </div>
+
+    <script>
+        // 1. UNLOCK FORM LOGIC
+        function unlockForm() {
+            var selectBox = document.getElementById("facultySelect");
+            var formSection = document.getElementById("feedbackQuestions");
+            var submitBtn = document.getElementById("submitBtn");
+
+            // Check if user selected a valid value (not empty)
+            if (selectBox.value !== "") {
+                formSection.classList.remove("form-locked");
+                submitBtn.disabled = false;
+            } else {
+                formSection.classList.add("form-locked");
+                submitBtn.disabled = true;
+            }
+        }
+
+        // 2. PROGRESSIVE RATING LOGIC
+        function updateRating(groupName, selectedValue) {
+            var inputs = document.querySelectorAll('input[name="' + groupName + '"]');
+            inputs.forEach(function(input) {
+                var parentBox = input.closest('.rating-box');
+                var val = parseInt(input.value);
+                if (val <= selectedValue) {
+                    parentBox.classList.add('selected');
+                } else {
+                    parentBox.classList.remove('selected');
+                }
+            });
+        }
+    </script>
+
+    <div th:fragment="ratingRow(label, fieldName)" class="question-row">
+        <div class="q-label" th:text="${label}">Label</div>
+        <div class="rating-container">
+            <div class="rating-box"><label th:for="${fieldName} + '1'" onclick="updateRating(this.getAttribute('data-name'), 1)" th:data-name="${fieldName}">1</label><input type="radio" th:id="${fieldName} + '1'" th:name="${fieldName}" value="1" required></div>
+            <div class="rating-box"><label th:for="${fieldName} + '2'" onclick="updateRating(this.getAttribute('data-name'), 2)" th:data-name="${fieldName}">2</label><input type="radio" th:id="${fieldName} + '2'" th:name="${fieldName}" value="2"></div>
+            <div class="rating-box"><label th:for="${fieldName} + '3'" onclick="updateRating(this.getAttribute('data-name'), 3)" th:data-name="${fieldName}">3</label><input type="radio" th:id="${fieldName} + '3'" th:name="${fieldName}" value="3"></div>
+            <div class="rating-box"><label th:for="${fieldName} + '4'" onclick="updateRating(this.getAttribute('data-name'), 4)" th:data-name="${fieldName}">4</label><input type="radio" th:id="${fieldName} + '4'" th:name="${fieldName}" value="4"></div>
+            <div class="rating-box"><label th:for="${fieldName} + '5'" onclick="updateRating(this.getAttribute('data-name'), 5)" th:data-name="${fieldName}">5</label><input type="radio" th:id="${fieldName} + '5'" th:name="${fieldName}" value="5"></div>
+        </div>
+    </div>
 
 </body>
 </html>

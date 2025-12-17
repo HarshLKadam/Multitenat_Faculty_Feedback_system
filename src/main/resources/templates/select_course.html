@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Select Course</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #f9f9f9; }
+        
+        h1 { color: #333; text-align: center; }
+        h3 { color: #555; text-align: center; margin-bottom: 30px; }
+
+        .course-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+
+        .course-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            width: 250px; 
+            text-align: center; 
+            transition: transform 0.2s;
+            border-top: 5px solid #007bff;
+        }
+
+        .course-card:hover { transform: translateY(-5px); }
+        
+        .course-name { font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .semester { color: #777; margin-bottom: 20px; }
+        
+        .btn-select { 
+            display: inline-block; 
+            text-decoration: none; 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            width: 80%;
+        }
+        .btn-select:hover { background: #0056b3; }
+
+        .back-link { display: block; text-align: center; margin-top: 30px; color: #666; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h1 th:text="${school.name}">School Name</h1>
+    <h3>Select Your Course & Semester</h3>
+
+    <div th:if="${courses.empty}" style="text-align: center; color: red;">
+        <p>No courses found for this institute.</p>
+        <p>Please ask your administrator to add courses.</p>
+    </div>
+
+    <div class="course-grid">
+        <div th:each="course : ${courses}" class="course-card">
+            <div class="course-name" th:text="${course.courseName}">MCA</div>
+            <div class="semester" th:text="${course.semester}">Sem 1</div>
+            
+            <a th:href="@{/feedback-form(courseId=${course.id})}" class="btn-select">Select</a>
+        </div>
+    </div>
+
+    <a href="/" class="back-link">← Back to Institutes</a>
+
+</body>
+</html>

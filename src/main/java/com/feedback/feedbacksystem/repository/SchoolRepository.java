@@ -1,10 +1,13 @@
 package com.feedback.feedbacksystem.repository;
 
-import com.feedback.feedbacksystem.entity.School;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.Optional;
+
+import com.feedback.feedbacksystem.entity.School;
 
 public interface SchoolRepository extends JpaRepository<School, Long> {
-    // Custom method to find a school by its email domain (e.g., "mit.edu")
-    Optional<School> findByEmailDomain(String emailDomain);
+    // Check if username exists (for registration)
+    boolean existsByUsername(String username);
+
+    // Find for login
+    School findByUsername(String username);
 }

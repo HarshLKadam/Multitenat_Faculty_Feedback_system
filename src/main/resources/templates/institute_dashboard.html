@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Institute Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        h1 { margin: 0; color: #333; }
+        .logout { color: #dc3545; text-decoration: none; font-weight: bold; border: 1px solid #dc3545; padding: 8px 15px; border-radius: 4px; }
+        
+        .container { display: flex; gap: 20px; margin-top: 20px; }
+        .sidebar { width: 30%; }
+        .main-content { width: 70%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f1f1f1; }
+        .btn-view { background: #17a2b8; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1 th:text="${school.name}">Institute Name</h1>
+            <small th:if="${school.emailRestricted}" style="color:red">Restricted Mode (@<span th:text="${school.emailDomain}"></span>)</small>
+            <small th:unless="${school.emailRestricted}" style="color:green">Open Access Mode</small>
+        </div>
+        <a href="/institute/logout" class="logout">Logout</a>
+    </div>
+
+    <div class="container">
+        
+        <div class="sidebar">
+            
+            <div class="card">
+                <h3>1. Add Course</h3>
+                <form action="/institute/add-course" method="post">
+                    <label>Course Name</label>
+                    <input type="text" name="courseName" placeholder="e.g. MCA" required>
+                    
+                    <label>Semester</label>
+                    <input type="text" name="semester" placeholder="e.g. Sem 1" required>
+                    
+                    <button type="submit">Add Course</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>2. Add Faculty</h3>
+                <form action="/institute/add-faculty" method="post">
+                    <label>Faculty Name</label>
+                    <input type="text" name="name" required placeholder="Dr. jhonny marathe">
+                    
+                    <label>Subject</label>
+                    <input type="text" name="subject" required placeholder="Data Science">
+                    
+                    <label>Assign to Course</label>
+                    <select name="courseId" required>
+                        <option value="">-- Select Course --</option>
+                        <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.courseName} + ' - ' + ${c.semester}"></option>
+                    </select>
+
+                    <label>Photo URL (Optional)</label>
+                    <input type="text" name="photoUrl" placeholder="https://...">
+
+                    <button type="submit" style="background: #28a745;">Add Faculty</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <h3>Faculty Management & Feedback</h3>
+            
+            <p th:if="${facultyList.empty}" style="color: #666; font-style: italic;">
+                No faculty added yet. Use the form on the left to add courses and faculty.
+            </p>
+
+            <table th:unless="${facultyList.empty}">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Subject</th>
+                        <th>Course</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="fac : ${facultyList}">
+                        <td>
+                            <span th:text="${fac.name}"></span>
+                        </td>
+                        <td th:text="${fac.subject}"></td>
+                        <td th:text="${fac.course.courseName} + ' ' + ${fac.course.semester}"></td>
+                        <td>
+                            <a th:href="@{/institute/view-feedback(facultyId=${fac.id})}" class="btn-view">View Feedback</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</body>
+</html>

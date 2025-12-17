@@ -10,8 +10,15 @@ public class School {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
+    private String username; // NEW LOGIN ID
+
     @Column(nullable = false)
-    private String name;
+    private String name; // Display Name (e.g. MIT)
+    
+    
+    @Column(name = "logo_url")
+    private String logoUrl; // NEW FIELD
 
     @Column(name = "email_domain")
     private String emailDomain;
@@ -39,6 +46,12 @@ public class School {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    
+    public String getLogoUrl() { return logoUrl; }
+    public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
 
     public String getEmailDomain() { return emailDomain; }
     public void setEmailDomain(String emailDomain) { this.emailDomain = emailDomain; }

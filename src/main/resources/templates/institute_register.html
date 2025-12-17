@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Register Institute</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 400px; }
+        h2 { text-align: center; margin-top: 0; color: #28a745; }
+        label { display: block; margin-top: 10px; font-weight: 500; color: #555; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin-top: 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; background: #28a745; color: white; font-weight: bold; }
+        button:hover { background: #218838; }
+        .link { margin-top: 20px; display: block; text-align: center; color: #666; text-decoration: none; font-size: 0.9em; }
+        .link:hover { text-decoration: underline; color: #28a745; }
+        .error { color: red; font-size: 0.9em; text-align: center; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Register Institute</h2>
+        <p style="text-align:center; color:#666; font-size:0.9em;">Create a portal to manage faculty feedback.</p>
+
+        <p th:if="${error}" class="error" th:text="${error}"></p>
+
+        <form action="/institute/register" method="post">
+            <label>Institute Display Name</label>
+            <input type="text" name="name" required placeholder="e.g.  Veermata Jijabai Technological Institute (VJIT)">
+            
+            <label>Create Admin Username</label>
+            <input type="text" name="username" required placeholder="e.g. stanford_admin">
+            <small style="color:#888; font-size:0.8em;">You will use this to login.</small>
+
+            <label>Create Password</label>
+            <input type="password" name="password" required>
+
+            <label>Security Mode</label>
+            <select name="isRestricted" id="securityMode" onchange="toggleEmailField()">
+                <option value="false">Open Mode (Public)</option>
+                <option value="true">Restricted Mode (Email Check)</option>
+            </select>
+
+            <div id="emailField" style="display:none;">
+                <label>Allowed Email Domain</label>
+                <input type="text" name="emailDomain" placeholder="e.g. stanford.edu">
+                <small style="color:#888;">Only students with this email domain can vote.</small>
+            </div>
+            
+            <button type="submit">Register Now</button>
+        </form>
+
+        <a href="/institute/login" class="link">Already registered? Login here</a>
+    </div>
+
+    <script>
+        function toggleEmailField() {
+            var mode = document.getElementById("securityMode").value;
+            var field = document.getElementById("emailField");
+            if (mode === "true") {
+                field.style.display = "block";
+            } else {
+                field.style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+</html>

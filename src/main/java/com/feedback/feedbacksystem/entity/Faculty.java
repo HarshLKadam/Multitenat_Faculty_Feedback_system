@@ -17,22 +17,16 @@ public class Faculty {
 
     private String subject;
 
+    @Column(name = "photo_url")
+    private String photoUrl; // NEW FIELD
+
+    // Link to Course 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "school_id", nullable = false)
+    @JoinColumn(name = "course_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private School school;
-
-    public Faculty() {}
-
-    public Faculty(Long id, String name, String subject, School school) {
-        this.id = id;
-        this.name = name;
-        this.subject = subject;
-        this.school = school;
-    }
+    private Course course;
 
     // --- MANUAL GETTERS AND SETTERS ---
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -42,6 +36,9 @@ public class Faculty {
     public String getSubject() { return subject; }
     public void setSubject(String subject) { this.subject = subject; }
 
-    public School getSchool() { return school; }
-    public void setSchool(School school) { this.school = school; }
+    public String getPhotoUrl() { return photoUrl; }
+    public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+
+    public Course getCourse() { return course; }
+    public void setCourse(Course course) { this.course = course; }
 }

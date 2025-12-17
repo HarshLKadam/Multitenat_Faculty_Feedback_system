@@ -3,25 +3,92 @@
 <head>
     <title>Select School</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .school-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
-        a { text-decoration: none; color: white; background: #007bff; padding: 10px 15px; border-radius: 3px; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #f8f9fa; }
+        
+        /* Navbar */
+        .navbar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e9ecef; padding-bottom: 15px; margin-bottom: 30px; }
+        .navbar h1 { margin: 0; font-size: 1.5rem; color: #333; }
+        .btn-login { background: #343a40; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 0.9rem; transition: background 0.2s; }
+        .btn-login:hover { background: #23272b; }
+
+        /* School Card */
+        .school-card { 
+            border: 1px solid #e0e0e0; 
+            padding: 25px; 
+            margin: 20px 0; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            background: #fff; 
+            position: relative; /* For positioning badges */
+            transition: transform 0.2s;
+        }
+        .school-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+
+        .school-card h2 { margin-top: 0; color: #007bff; margin-bottom: 10px; }
+        
+        .btn-proceed { text-decoration: none; color: white; background: #007bff; padding: 10px 20px; border-radius: 5px; display: inline-block; margin-top: 15px; font-weight: 500; }
+        .btn-proceed:hover { background: #0056b3; }
+
+        /* RATING BADGE STYLE */
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            border: 1px solid #ffeeba;
+            margin-bottom: 10px;
+        }
+        .star-icon { margin-right: 5px; color: #ffc107; font-size: 1.2rem; }
+        .no-rating { color: #6c757d; font-size: 0.9rem; font-style: italic; }
+
     </style>
 </head>
 <body>
-    <h1>Welcome to Faculty Feedback Portal</h1>
-    <h3>Select your School/College to continue:</h3>
+
+    <div class="navbar">
+        <h1>Faculty Feedback Portal</h1>
+        <a href="/institute/login" class="btn-login">Institute Login</a>
+    </div>
+
+    <h3 style="color:#555;">Select your School/College to continue:</h3>
 
     <div th:each="school : ${schools}" class="school-card">
+        
         <h2 th:text="${school.name}">School Name</h2>
-        <p th:if="${school.emailRestricted}" style="color:red;">
-            * Restricted Mode (Requires @<span th:text="${school.emailDomain}"></span> email)
+
+        <div th:with="rating=${schoolRatings.get(school.id)}">
+            <div th:if="${rating > 0}" class="rating-badge">
+                <span class="star-icon">★</span> 
+                <span th:text="${#numbers.formatDecimal(rating, 1, 1)}">4.5</span> 
+                <span style="margin-left: 5px; font-weight: normal; font-size: 0.8em;"> / 5.0 Overall Faculty Rating</span>
+            </div>
+            <div th:if="${rating == 0.0}" class="no-rating">
+                (No ratings yet)
+            </div>
+        </div>
+        <div style="margin-top: 5px; margin-bottom: 15px;">
+            <a th:href="@{/school-ratings(schoolId=${school.id})}" style="font-size: 0.9em; text-decoration: none; color: #007bff; border-bottom: 1px dotted #007bff;">
+                Check Individual Faculty Ratings
+            </a>
+        </div>
+        
+        <p th:if="${school.emailRestricted}" style="color: #d9534f; font-weight: 500; margin-top: 10px;">
+            🔒 Restricted Mode (Requires @<span th:text="${school.emailDomain}"></span> email)
         </p>
-        <p th:unless="${school.emailRestricted}" style="color:green;">
-            * Open Mode (No Login Required)
+        <p th:unless="${school.emailRestricted}" style="color: #28a745; font-weight: 500; margin-top: 10px;">
+            🌍 Open Mode (No Login Required)
         </p>
-        <br>
-        <a th:href="@{/feedback-form(schoolId=${school.id})}">Proceed to Feedback</a>
+        
+        <a th:href="@{/select-course(schoolId=${school.id})}" class="btn-proceed">Proceed to Feedback</a>
     </div>
+
+    <p th:if="${schools.empty}" style="text-align: center; color: #777; margin-top: 50px;">
+        No institutes registered yet. <a href="/institute/register" style="color:#007bff; background:none; padding:0;">Register one now?</a>
+    </p>
+
 </body>
 </html>

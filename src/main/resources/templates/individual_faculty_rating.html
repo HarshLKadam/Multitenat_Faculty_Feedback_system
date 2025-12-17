@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Faculty Ratings</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f8f9fa; max-width: 900px; margin: auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 15px; }
+        h1 { margin: 0; color: #333; }
+        .btn-back { text-decoration: none; background: #6c757d; color: white; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        .btn-back:hover { background: #5a6268; }
+
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        
+        .faculty-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-top: 4px solid #007bff; transition: transform 0.2s; }
+        .faculty-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+        .fac-name { font-size: 1.2em; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .fac-subject { color: #666; font-size: 0.9em; margin-bottom: 15px; }
+        .fac-course { background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+
+        .rating-box { display: flex; align-items: center; margin-top: 15px; font-size: 1.1em; font-weight: bold; }
+        .star { color: #ffc107; margin-right: 5px; }
+        
+        .score-high { color: #28a745; }
+        .score-avg { color: #ffc107; }
+        .score-low { color: #dc3545; }
+        .no-rating { color: #aaa; font-style: italic; font-weight: normal; font-size: 0.9em; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1 th:text="${school.name}">School Name</h1>
+            <span style="color: #666;">Faculty Performance Report</span>
+        </div>
+        <a href="/" class="btn-back">←Home</a>
+    </div>
+
+    <div class="card-grid">
+        <div th:each="fac : ${facultyList}" class="faculty-card">
+            
+            <div class="fac-name" th:text="${fac.name}">Dr. Smith</div>
+            <div class="fac-subject">
+                <span th:text="${fac.subject}">Mathematics</span>
+                <span class="fac-course" th:text="${fac.course.courseName} + ' ' + ${fac.course.semester}">MCA Sem 1</span>
+            </div>
+
+            <div class="rating-box" th:with="rating=${facultyRatings.get(fac.id)}">
+                <span class="star">★</span>
+                
+                <span th:if="${rating > 0}" 
+                      th:text="${#numbers.formatDecimal(rating, 1, 1)} + ' / 5.0'"
+                      th:classappend="${rating >= 4} ? 'score-high' : (${rating >= 3} ? 'score-avg' : 'score-low')">
+                    4.5 / 5.0
+                </span>
+
+                <span th:if="${rating == 0.0}" class="no-rating">No ratings yet</span>
+            </div>
+
+        </div>
+    </div>
+
+    <p th:if="${facultyList.empty}" style="text-align:center; color:#777; margin-top:50px;">
+        No faculty members found for this institute.
+    </p>
+
+</body>
+</html>
